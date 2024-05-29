@@ -31,7 +31,7 @@ def get_quality_for_all_settings(duration, fps, screen_width, screen_height):
 
     json_dump_dict= {}
     quality_array = np.full((len(radius_list), len(frr_list)), np.nan)
-    Luminance_peak = 400
+    Luminance_peak = 10
     for radius_index in tqdm(range(len(radius_list))):
         radius_value = radius_list[radius_index]
         for frr_index in tqdm(range(len(frr_list))):
@@ -64,7 +64,7 @@ def get_quality_for_all_settings(duration, fps, screen_width, screen_height):
     json_dump_dict['fps'] = fps
     json_dump_dict['screen_width'] = screen_width
     json_dump_dict['screen_height'] = screen_height
-    with open('FovVideoVDP_flikcer_JOD_results_L_peak_400.json', 'w') as fp:
+    with open('FovVideoVDP_flikcer_JOD_results_L_peak_10.json', 'w') as fp:
         json.dump(json_dump_dict, fp)
 
 
