@@ -11,7 +11,6 @@ import sys
 import pandas as pd
 
 from generate_stimulus_videos import generate_quest_luminance_one_video
-sys.path.append(r'E:\Py_codes\VRR_Real')
 from LuminanceVRR2Sensitivity import LuminanceVRR2Sensitivity
 luminance_vrr_2_sensitivity = LuminanceVRR2Sensitivity()
 import warnings
