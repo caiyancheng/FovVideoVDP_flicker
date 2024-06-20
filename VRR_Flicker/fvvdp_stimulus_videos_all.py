@@ -62,14 +62,14 @@ def get_quality_for_all_settings(duration, fps, screen_width, screen_height):
 
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             fps = 120
-            video_filename = os.path.join(r'E:\Py_codes\FovVideoVDP_flicker\VRR_Flicker\heatmap_visualization_raw', f'heatmap_video_Radius_{radius_value}_FRR_{frr_value}.mp4')
+            video_filename = os.path.join(r'heatmap_visualization_raw', f'heatmap_video_Radius_{radius_value}_FRR_{frr_value}.mp4')
             frame_size = (heatmap_video.shape[2], heatmap_video.shape[1])  # (width, height)
             out = cv2.VideoWriter(video_filename, fourcc, fps, frame_size)
             for frame in heatmap_video:
                 out.write(frame)
             out.release()
 
-            gif_file_name = os.path.join(r'E:\Py_codes\FovVideoVDP_flicker\VRR_Flicker\heatmap_visualization_raw',
+            gif_file_name = os.path.join(r'heatmap_visualization_raw',
                                          f'heatmap_video_Radius_{radius_value}_FRR_{frr_value}.gif')
             frames = []
             for frame in heatmap_video:
