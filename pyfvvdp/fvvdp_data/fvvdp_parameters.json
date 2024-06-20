@@ -19,7 +19,7 @@
     "sensitivity_correction": 16.2596, 
     "masking_model": "min_mutual_masking_perc_norm2",
     "local_adapt": "gpyr",
-    "contrast": "weber", 
+    "contrast": "weber_g1", 
     "jod_a": -0.0161713, 
     "log_jod_exp": -0.2280,
     "mask_q_sust": 2.43685,

@@ -5,6 +5,7 @@ from tqdm import tqdm
 from PIL import Image, ImageDraw
 import glfw
 import sys
+import cv2
 
 sys.path.append(r'E:\Py_codes\VRR_Real')
 from G1_Calibration.compute_size_real import compute_scale_from_degree
@@ -64,6 +65,10 @@ def generate_quest_luminance_one_video(radius_value, frr_value, fps, screen_widt
     images_test = []
     images_reference = []
     frame_unit = pre_gernerate_frame_unit(radius_value, screen_width, screen_height)
+    # For Debug:
+    # import matplotlib.pyplot as plt
+    # plt.imshow(frame_unit)
+
     for frame_num in range(total_frames):
         time = frame_num / fps
         frame_test, frame_reference = generate_frame(frame_unit, time, frr_value, Luminance, delta_Luminance)
@@ -71,6 +76,7 @@ def generate_quest_luminance_one_video(radius_value, frr_value, fps, screen_widt
         images_reference.append(frame_reference.astype(np.float16))
     video_test = np.stack(images_test, axis=3)
     video_reference = np.stack(images_reference, axis=3)
+
     return video_test, video_reference
 
 

@@ -148,7 +148,7 @@
 
   "lg_oled_g1": {
     "name": "LG OLED G1",
-    "resolution": [768, 432],
+    "resolution": [384, 216],
     "viewing_distance_meters":  1.000,
     "diagonal_size_inches": 55,
     "max_luminance": 407.8,

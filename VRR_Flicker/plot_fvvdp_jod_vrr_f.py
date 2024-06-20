@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 
-with open('FovVideoVDP_flikcer_JOD_results.json', 'r') as fp:
+with open('FovVideoVDP_flikcer_JOD_results_L_peak_10_foveated_min_freq_01.json', 'r') as fp:
     all_quality_data = json.load(fp)
 
 quality_array = np.array(all_quality_data['quality'])

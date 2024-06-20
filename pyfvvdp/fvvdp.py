@@ -24,7 +24,7 @@ from pyfvvdp.video_source import *
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from third_party.cpuinfo import cpuinfo
-from pyfvvdp.fvvdp_lpyr_dec import fvvdp_lpyr_dec, fvvdp_contrast_pyr
+from pyfvvdp.fvvdp_lpyr_dec import fvvdp_lpyr_dec, fvvdp_contrast_pyr, weber_contrast_pyr
 from interp import interp1, interp3
 
 import pyfvvdp.utils as utils
@@ -189,7 +189,8 @@ class fvvdp:
 
         if self.lpyr is None or self.lpyr.W!=width or self.lpyr.H!=height:
             if self.local_adapt=="gpyr":
-                self.lpyr = fvvdp_contrast_pyr(width, height, self.pix_per_deg, self.device)
+                # self.lpyr = fvvdp_contrast_pyr(width, height, self.pix_per_deg, self.device)
+                self.lpyr = weber_contrast_pyr(width, height, self.pix_per_deg, self.device, contrast=self.contrast)
             else:
                 self.lpyr = fvvdp_lpyr_dec(width, height, self.pix_per_deg, self.device)
 
@@ -345,12 +346,12 @@ class fvvdp:
         if self.debug: self.tb.verify_against_matlab(R.permute(0,2,3,4,1), 'Rdata', self.device, file='R_%d' % (ff+1), tolerance = 0.01)
 
         # Perform Laplacian pyramid decomposition
-        B_bands, B_gbands = self.lpyr.decompose(R[0,...])
+        B_bands, L_bkg_pyr = self.lpyr.decompose(R[0,...])
 
         if self.debug: assert len(B_bands) == self.lpyr.get_band_count()
 
         # CSF
-        N_nCSF = [[None, None] for i in range(self.lpyr.get_band_count()-1)]
+        N_nCSF = [[None, None] for i in range(self.lpyr.get_band_count())]
 
         if self.do_heatmap:
             Dmap_pyr_bands, Dmap_pyr_gbands = self.heatmap_pyr.decompose( torch.zeros([1,1,height,width], dtype=torch.float, device=self.device))
@@ -371,17 +372,19 @@ class fvvdp:
         Q_per_ch_block = None
 
         for cc in range(temp_ch):
-            for bb in range(self.lpyr.get_band_count()-1):
-
+            for bb in range(self.lpyr.get_band_count()):
+                is_baseband = (bb == (self.lpyr.get_band_count() - 1))
                 T_f = self.lpyr.get_band(B_bands, bb)[cc*2+0,0,...]
                 R_f = self.lpyr.get_band(B_bands, bb)[cc*2+1,0,...]
 
-                if self.local_adapt=="gpyr":
-                    L_bkg = self.lpyr.get_gband(B_gbands, bb)
-                else:
-                    # 1:2 below is passing reference sustained
-                    L_bkg, R_f, T_f = self.compute_local_contrast(R_f, T_f, 
-                        self.lpyr.get_gband(B_gbands, bb+1)[1:2,...], L_adapt)
+                L_bkg = self.lpyr.get_gband(L_bkg_pyr, bb) #[2,1,216,384]
+                L_bkg = L_bkg[None,0,:,:,:]
+                # if self.local_adapt=="gpyr":
+                #     L_bkg = self.lpyr.get_gband(B_gbands, bb)
+                # else:
+                #     # 1:2 below is passing reference sustained
+                #     L_bkg, R_f, T_f = self.compute_local_contrast(R_f, T_f,
+                #         self.lpyr.get_gband(B_gbands, bb+1)[1:2,...], L_adapt)
 
                 # temp_errs[ff] += torch.mean(torch.abs(R_f - T_f))
                 # continue
@@ -425,8 +428,10 @@ class fvvdp:
                     if self.contrast == "log": N_nCSF[bb][cc] = self.weber2log(torch.min(1./S, self.torch_scalar(0.9999999)))
                     else:                      N_nCSF[bb][cc] = torch.reciprocal(S)
                     # if self.debug: self.tb.verify_against_matlab(N_nCSF[bb][cc], 'N_nCSF_data', self.device, file='N_nCSF_%d_%d_%d' % (ff+1,bb+1,cc+1), tolerance = 0.01, relative = True)
-
-                D = self.apply_masking_model(T_f, R_f, N_nCSF[bb][cc], cc)
+                if is_baseband:
+                    D = (torch.abs(T_f-R_f) * S)
+                else:
+                    D = self.apply_masking_model(T_f, R_f, N_nCSF[bb][cc], cc)
 
                 if self.debug: self.tb.verify_against_matlab(D, 'D_data', self.device, file='D_%d_%d_%d' % (ff+1,bb+1,cc+1), tolerance = 0.1, relative = True, verbose=False)
 
@@ -437,7 +442,7 @@ class fvvdp:
                         self.heatmap_pyr.set_band(Dmap_pyr_bands, bb, self.heatmap_pyr.get_band(Dmap_pyr_bands, bb) + w_temp_ch[cc] * D)
 
                 if Q_per_ch_block is None:
-                    Q_per_ch_block = torch.zeros((self.lpyr.height, 2, 1), device=self.device)
+                    Q_per_ch_block = torch.zeros((self.lpyr.get_band_count(), 2, 1), device=self.device)
 
                 Q_per_ch_block[bb,cc,0] = self.lp_norm(D.flatten(), self.beta, 0, True)
 

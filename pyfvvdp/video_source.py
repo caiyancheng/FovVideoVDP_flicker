@@ -136,7 +136,7 @@ class fvvdp_video_source_array( fvvdp_video_source_dm ):
                 reference_video = reference_video.astype(np.int16)
             reference_video = torch.tensor(reference_video)
 
-        # Change the order of dimension to match BFCHW - batch, frame, colour, height, width
+        # Change the order of dimension to match BFCHW - batch, colour, frame, height, width
         test_video = reshuffle_dims( test_video, in_dims=dim_order, out_dims="BCFHW" )
         reference_video = reshuffle_dims( reference_video, in_dims=dim_order, out_dims="BCFHW" )
 

@@ -3,7 +3,7 @@ import numpy as np
 import json
 import math
 
-with open('E:\Py_codes\ColorVideoVDP\VRR_Flicker/videos_all_quality_only_luminance.json', 'r') as fp:
+with open('E:\Py_codes\FovVideoVDP_flicker\VRR_Flicker/FovVideoVDP_flikcer_JOD_results_L_peak_10_foveated_min_freq_01.json', 'r') as fp:
     all_quality_data = json.load(fp)
 
 quality_array = np.array(all_quality_data['quality'])

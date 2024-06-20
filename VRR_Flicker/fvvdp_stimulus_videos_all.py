@@ -8,6 +8,8 @@ from tqdm import tqdm
 import json
 import pyfvvdp
 import sys
+import cv2
+import imageio
 import pandas as pd
 
 from generate_stimulus_videos import generate_quest_luminance_one_video
@@ -40,10 +42,10 @@ def get_quality_for_all_settings(duration, fps, screen_width, screen_height):
             if np.isnan(Luminance):
                 print('NAN, continue')
                 continue
-            contrast = 1 / luminance_vrr_2_sensitivity.LT2S(Luminance, frr_value)
+            contrast = 1 / luminance_vrr_2_sensitivity.LT2S(Luminance, frr_value) #推出在这个光照下的对比度，以生成对应的视频
             delta_Luminance = float(Luminance * contrast)
             disp_photo = pyfvvdp.fvvdp_display_photo_absolute(Luminance_peak)
-            metric = pyfvvdp.fvvdp(display_name='lg_oled_g1', display_photometry=disp_photo, heatmap='threshold')
+            metric = pyfvvdp.fvvdp(display_name='lg_oled_g1', display_photometry=disp_photo, heatmap='raw', foveated=True)
             video_test, video_reference = generate_quest_luminance_one_video(radius_value, frr_value, fps, screen_width,
                                                                              screen_height, Luminance, delta_Luminance,
                                                                              total_frames)
@@ -52,6 +54,28 @@ def get_quality_for_all_settings(duration, fps, screen_width, screen_height):
             start = time.time()
             Q_JOD_static, stats_static = metric.predict(video_test.astype('float32'), video_reference.astype('float32'), dim_order="HWCF",
                                                         frames_per_second=fps)
+            heatmap_video = stats_static['heatmap'].cpu()  # [1, channel, frames, height, width]
+            heatmap_video = heatmap_video.expand(1,3,-1,-1,-1).squeeze(0).numpy()
+
+            heatmap_video = (heatmap_video * 255).astype(np.uint8)
+            heatmap_video = np.transpose(heatmap_video, (1, 2, 3, 0))
+
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            fps = 120
+            video_filename = os.path.join(r'E:\Py_codes\FovVideoVDP_flicker\VRR_Flicker\heatmap_visualization_raw', f'heatmap_video_Radius_{radius_value}_FRR_{frr_value}.mp4')
+            frame_size = (heatmap_video.shape[2], heatmap_video.shape[1])  # (width, height)
+            out = cv2.VideoWriter(video_filename, fourcc, fps, frame_size)
+            for frame in heatmap_video:
+                out.write(frame)
+            out.release()
+
+            gif_file_name = os.path.join(r'E:\Py_codes\FovVideoVDP_flicker\VRR_Flicker\heatmap_visualization_raw',
+                                         f'heatmap_video_Radius_{radius_value}_FRR_{frr_value}.gif')
+            frames = []
+            for frame in heatmap_video:
+                frames.append(frame)
+            imageio.mimsave(gif_file_name, frames, fps=120)
+
             end = time.time()
             print(f'Radius_{radius_value}_FRR_{frr_value}')
             print('Quality for sizestatic noise: {:.3f} JOD (took {:.4f} secs to compute)'.format(Q_JOD_static, end - start))
@@ -63,7 +87,7 @@ def get_quality_for_all_settings(duration, fps, screen_width, screen_height):
     json_dump_dict['fps'] = fps
     json_dump_dict['screen_width'] = screen_width
     json_dump_dict['screen_height'] = screen_height
-    with open('FovVideoVDP_flikcer_JOD_results_L_peak_10.json', 'w') as fp:
+    with open('FovVideoVDP_flikcer_JOD_results_L_peak_10_foveated_min_freq_0.json', 'w') as fp:
         json.dump(json_dump_dict, fp)
 
 
