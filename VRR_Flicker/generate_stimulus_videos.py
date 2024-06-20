@@ -6,14 +6,36 @@ from PIL import Image, ImageDraw
 import glfw
 import sys
 import cv2
+import math
 
-sys.path.append(r'E:\Py_codes\VRR_Real')
-from G1_Calibration.compute_size_real import compute_scale_from_degree
-from G1_Calibration.compute_x_y_location import compute_x_y_from_eccentricity
 from LuminanceVRR2Sensitivity import LuminanceVRR2Sensitivity
 import pandas as pd
 luminance_vrr_2_sensitivity = LuminanceVRR2Sensitivity()
 
+def compute_scale_from_degree(visual_degree, distance = 1):
+    if visual_degree == 'full':
+        return 1, 1
+    screen_width_resolution = 3840
+    screen_height_resolution = 2160
+    # screen_width = 1.2176
+    # screen_height = 0.6849
+    screen_width = 1.225
+    screen_height = 0.706
+    W = math.tan(visual_degree/2 * math.pi / 180) * 2 * distance
+    W_pixels = W / screen_width * screen_width_resolution
+    W_scale = W_pixels / screen_width_resolution
+    H_scale = W_pixels / screen_height_resolution
+
+    return W_scale, H_scale
+
+def compute_x_y_from_eccentricity(eccentricity, distance = 1):
+    screen_width_resolution = 3840
+    screen_height_resolution = 2160
+    screen_width = 1.2176
+    screen_height = 0.6849
+    Y = 0.
+    X = (distance * math.tan(eccentricity * math.pi / 180))/screen_width * 2
+    return X, Y
 
 def pre_gernerate_frame_unit(radius_value, screen_width, screen_height):
     x_center, y_center = compute_x_y_from_eccentricity(eccentricity=0)
@@ -88,7 +110,7 @@ def generate_quest_luminance_video_json(output_dir, duration, fps, down_rate):
     screen_height = int(screen_height / down_rate)
     total_frames = duration * fps
 
-    df = pd.read_csv(r'E:\Matlab_codes\csf_datasets\raw_data\yancheng2024/yancheng2024_sensitivity_average.csv')
+    df = pd.read_csv(r'yancheng2024_sensitivity_average.csv') #E:\Matlab_codes\csf_datasets\raw_data\yancheng2024/
     query_radius_list = df['Radius'].sort_values()
     query_frr_list = df['FRR'].sort_values()
     os.makedirs(output_dir, exist_ok=True)
